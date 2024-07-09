@@ -4,5 +4,5 @@ import it.danilo.projectwork.dto.DistrictDto;
 
 public interface DistrictService {
 	DistrictDto createDistrict(DistrictDto elementDto);	
-	DistrictDto getElementById(Integer id);
+	DistrictDto getElementById(Integer id);	
 }

@@ -1,5 +1,9 @@
 package it.danilo.projectwork.mapper;
 
+import java.util.List;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
 import it.danilo.projectwork.dto.CityDto;
@@ -48,6 +52,37 @@ public class DeviceMapper {
 		}
 		
 		return device;
+	}
+	
+	public JSONObject mapToDeviceesJSON(City city, List<Device> devicees) {
+		
+		JSONObject deviceesJSON = new JSONObject();
+		JSONArray deviceesListJSON = new JSONArray();
+		
+		if(city!=null) {
+			deviceesJSON.put("City", city.getName());
+		}
+				
+		if(devicees!=null && devicees.size()>0) {
+			for(Device device : devicees) {
+				JSONObject deviceJSON = new JSONObject();
+				deviceJSON.put("District", device.getDistrict().getAddress());
+				deviceJSON.put("Name", device.getName());
+				deviceesListJSON.put(deviceJSON);
+			}
+		}
+
+		deviceesJSON.put("Devicees", deviceesListJSON);
+		
+		return deviceesJSON;
+	}
+
+	public JSONObject mapToDeviceJSON(City city, Device device) {
+
+		JSONObject deviceJSON = new JSONObject();
+		deviceJSON.put("District", device.getDistrict().getAddress());
+		deviceJSON.put("Name", device.getName());
+		return deviceJSON;
 	}
 
 }

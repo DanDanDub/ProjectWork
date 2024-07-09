@@ -3,11 +3,8 @@ package it.danilo.projectwork.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import it.danilo.projectwork.dto.CityDto;
@@ -25,6 +22,7 @@ public class CityController {
 		return new ResponseEntity<>(createdCity, HttpStatus.CREATED);
 	}
 	
+	/*
 	@GetMapping(value = "/city/{id}")
     public ResponseEntity<CityDto> getCityById(@RequestHeader String name, @RequestHeader String password, @PathVariable Integer id) {
 
@@ -52,5 +50,6 @@ public class CityController {
         
         return response;
     }
+    */
 
 }

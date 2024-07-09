@@ -18,6 +18,15 @@ public class StatusDto implements java.io.Serializable {
 	public StatusDto() {
 	}
 
+	public StatusDto(Integer id, City city, Device device, District district, Date timestamp, int co2Level) {
+		this.id = id;
+		this.city = city;
+		this.device = device;
+		this.district = district;
+		this.timestamp = timestamp;
+		this.co2Level = co2Level;
+	}
+
 	public StatusDto(Integer id, City city, Device device, District district, int co2Level) {
 		this.id = id;
 		this.city = city;
