@@ -1,9 +1,11 @@
 package it.danilo.projectwork.mapper;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import it.danilo.projectwork.dto.CityDto;
@@ -16,6 +18,12 @@ import it.danilo.projectwork.service.DistrictService;
 
 @Component
 public class DeviceMapper {
+
+	@Autowired
+	private CityMapper cityMapper;
+
+	@Autowired
+	private DistrictMapper districtMapper;
 	
 	private final CityService cityService;
     private final DistrictService districtService;
@@ -54,21 +62,28 @@ public class DeviceMapper {
 		return device;
 	}
 	
-	public JSONObject mapToDeviceesJSON(City city, List<Device> devicees) {
+	public JSONObject mapToJSON(ArrayList<DeviceDto> devicesDto) {
+		
+		List<Device> devices = new ArrayList<Device>();
+
+		if(devicesDto!=null && devicesDto.size()>0) {
+			for(DeviceDto statusDto : devicesDto) {
+				devices.add(mapToDevice(statusDto));
+			}
+		}
+		
+		return mapToJSONList(devices);
+		
+	}
+		
+	public JSONObject mapToJSONList(List<Device> devices) {
 		
 		JSONObject deviceesJSON = new JSONObject();
 		JSONArray deviceesListJSON = new JSONArray();
-		
-		if(city!=null) {
-			deviceesJSON.put("City", city.getName());
-		}
 				
-		if(devicees!=null && devicees.size()>0) {
-			for(Device device : devicees) {
-				JSONObject deviceJSON = new JSONObject();
-				deviceJSON.put("District", device.getDistrict().getAddress());
-				deviceJSON.put("Name", device.getName());
-				deviceesListJSON.put(deviceJSON);
+		if(devices!=null && devices.size()>0) {
+			for(Device device : devices) {
+				deviceesListJSON.put(mapToJSON(device));
 			}
 		}
 
@@ -77,11 +92,17 @@ public class DeviceMapper {
 		return deviceesJSON;
 	}
 
-	public JSONObject mapToDeviceJSON(City city, Device device) {
+	public JSONObject mapToJSON(DeviceDto deviceDto) {
+		return mapToJSON(mapToDevice(deviceDto));
+	}
+
+	public JSONObject mapToJSON(Device device) {
 
 		JSONObject deviceJSON = new JSONObject();
-		deviceJSON.put("District", device.getDistrict().getAddress());
-		deviceJSON.put("Name", device.getName());
+		deviceJSON.put("id", device.getId());
+		deviceJSON.put("city", cityMapper.mapToJSON(device.getCity()));
+		deviceJSON.put("district", districtMapper.mapToJSON(device.getDistrict()));
+		deviceJSON.put("name", device.getName());
 		return deviceJSON;
 	}
 

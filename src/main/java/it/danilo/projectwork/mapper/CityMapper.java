@@ -17,7 +17,11 @@ public class CityMapper {
 		return new City(elementDto.getId(), elementDto.getName(), elementDto.getPassword(), elementDto.getStatuses(), elementDto.getDistricts(), elementDto.getDevices());
 	}
 	
-	public Object mapToJSON(City city) {
+	public JSONObject mapToJSON(CityDto cityDto) {
+		return mapToJSON(mapToCity(cityDto));
+	}
+	
+	public JSONObject mapToJSON(City city) {
 		JSONObject jsonObject = new JSONObject();
 		
 		jsonObject.put("id", city.getId());

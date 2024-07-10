@@ -2,12 +2,14 @@ package it.danilo.projectwork.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import it.danilo.projectwork.dto.CityDto;
+import it.danilo.projectwork.mapper.CityMapper;
 import it.danilo.projectwork.service.CityService;
 
 @RestController
@@ -16,40 +18,23 @@ public class CityController {
 	@Autowired
 	private CityService cityService;
 
-	@PostMapping(value = "/city")
-	public ResponseEntity<CityDto> createCity(@RequestBody CityDto cityDto) {
-		CityDto createdCity = cityService.createCity(cityDto);
-		return new ResponseEntity<>(createdCity, HttpStatus.CREATED);
-	}
-	
-	/*
-	@GetMapping(value = "/city/{id}")
-    public ResponseEntity<CityDto> getCityById(@RequestHeader String name, @RequestHeader String password, @PathVariable Integer id) {
+	@Autowired
+	private CityMapper cityMapper;
 
-		ResponseEntity<CityDto> response = null;
+	@PostMapping(value = "/city", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<String> createCity(@RequestBody CityDto cityDto) {
 		
-        try {
-        	
-			CityDto login = cityService.login(name, password);
-			
-			if(login!=null) {
-				CityDto city = cityService.getElementById(id);
-		        if(city!=null) {
-		        	CityDto cityLite = new CityDto(city.getId(), city.getName(), city.getPassword());
-		            response = new ResponseEntity<>(cityLite, HttpStatus.OK);            	
-		        } else {
-		        	response = new ResponseEntity<>(HttpStatus.NOT_FOUND);
-		        }
-			} else {
-				response = new ResponseEntity<>(HttpStatus.FORBIDDEN);
-			}
-			
-        } catch (Exception e) {
-            response = new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        
-        return response;
-    }
-    */
+		ResponseEntity<String> response = null;
+		
+		try {
+			CityDto createdCity = cityService.createCity(cityDto);
+			response = new ResponseEntity<>(cityMapper.mapToJSON(cityMapper.mapToCity(createdCity)).toString(), HttpStatus.CREATED);
+		} catch (Exception e) {
+	        response = new ResponseEntity<>("Internal server error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+	        e.printStackTrace();
+		}
+
+		return response;
+	}
 
 }

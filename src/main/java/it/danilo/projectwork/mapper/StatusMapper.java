@@ -1,9 +1,11 @@
 package it.danilo.projectwork.mapper;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import it.danilo.projectwork.dto.DeviceDto;
@@ -17,6 +19,15 @@ import it.danilo.projectwork.service.DistrictService;
 
 @Component
 public class StatusMapper {
+
+	@Autowired
+	private CityMapper cityMapper;
+
+	@Autowired
+	private DistrictMapper districtMapper;
+
+	@Autowired
+	private DeviceMapper deviceMapper;
 	
     private final DistrictService districtService;
     private final DeviceService deviceService;
@@ -58,29 +69,47 @@ public class StatusMapper {
 		return status;
 	}
 
-	public JSONObject mapToStatusesJSON(City city, List<Status> statuses) {
+	public JSONObject mapToJSONList(ArrayList<StatusDto> statusesDto) {
+		
+		List<Status> statuses = new ArrayList<Status>();
+
+		if(statusesDto!=null && statusesDto.size()>0) {
+			for(StatusDto statusDto : statusesDto) {
+				statuses.add(mapToStatus(statusDto));
+			}
+		}
+		
+		return mapToJSONList(statuses);
+	}
+
+	public JSONObject mapToJSONList(List<Status> statuses) {
 		
 		JSONObject statusesJSON = new JSONObject();
 		JSONArray statusesListJSON = new JSONArray();
-		
-		if(city!=null) {
-			statusesJSON.put("City", city.getName());
-		}
 				
 		if(statuses!=null && statuses.size()>0) {
 			for(Status status : statuses) {
-				JSONObject statusJSON = new JSONObject();
-				statusJSON.put("District", status.getDistrict().getAddress());
-				statusJSON.put("Device", status.getDevice().getName());
-				statusJSON.put("Time", status.getTimestamp());
-				statusJSON.put("CO2_Level", status.getCo2Level());
-				statusesListJSON.put(statusJSON);
+				statusesListJSON.put(mapToJSON(status));
 			}
 		}
 
 		statusesJSON.put("Statuses", statusesListJSON);
 		
 		return statusesJSON;
+	}
+	
+	public JSONObject mapToJSON(StatusDto statusDto) {
+		return mapToJSON(mapToStatus(statusDto));
+	}
+	
+	public JSONObject mapToJSON(Status status) {
+		JSONObject statusJSON = new JSONObject();
+		statusJSON.put("city", cityMapper.mapToJSON(status.getCity()));
+		statusJSON.put("district", districtMapper.mapToJSON(status.getDistrict()));
+		statusJSON.put("device", deviceMapper.mapToJSON(status.getDevice()));
+		statusJSON.put("timestamp", status.getTimestamp());
+		statusJSON.put("co2Level", status.getCo2Level());
+		return statusJSON;
 	}
 	
 }

@@ -21,12 +21,16 @@ public class DistrictMapper {
 		return new District(elementDto.getId(), elementDto.getCity(), elementDto.getAddress(), elementDto.getDevices(), elementDto.getStatuses());
 	}
 
-	public Object mapToJSON(DistrictDto elementDto) {
+	public Object mapToJSON(DistrictDto districtDto) {
+		return mapToJSON(mapToDistrict(districtDto));
+	}
+	
+	public Object mapToJSON(District district) {
 		JSONObject jsonObject = new JSONObject();
 		
-		jsonObject.put("id", elementDto.getId());
-		jsonObject.put("city", cityMapper.mapToJSON(elementDto.getCity()));
-		jsonObject.put("address", elementDto.getAddress());
+		jsonObject.put("id", district.getId());
+		jsonObject.put("city", cityMapper.mapToJSON(district.getCity()));
+		jsonObject.put("address", district.getAddress());
 		
 		return jsonObject;
 	}

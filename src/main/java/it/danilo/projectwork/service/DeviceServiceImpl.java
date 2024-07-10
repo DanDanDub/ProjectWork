@@ -56,7 +56,7 @@ public class DeviceServiceImpl implements DeviceService {
 			String stageName = procedureName + "Check District ";
 			if(body.has("district") && body.getJSONObject("district")!=null && body.getJSONObject("district").has("id")) {
 				Optional<District> districtOptional = districtRepository.findByIdAndCity(body.getJSONObject("district").getInt("id"), city);
-				if(districtOptional!=null && districtOptional.get()!=null) {
+				if(districtOptional!=null && districtOptional.isPresent() && districtOptional.get()!=null) {
 					district = districtOptional.get();
 				} else {
 					keepGoing = false;

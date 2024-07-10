@@ -28,7 +28,6 @@ import it.danilo.projectwork.mapper.DeviceMapper;
 import it.danilo.projectwork.mapper.DistrictMapper;
 import it.danilo.projectwork.mapper.StatusMapper;
 import it.danilo.projectwork.repository.DeviceRepository;
-import it.danilo.projectwork.repository.DistrictRepository;
 import it.danilo.projectwork.repository.StatusRepository;
 import it.danilo.projectwork.service.CityService;
 import it.danilo.projectwork.service.DeviceService;
@@ -54,9 +53,6 @@ public class StatusController {
 	private CityMapper cityMapper;
 
 	@Autowired
-	private DistrictRepository districtRepository;
-
-	@Autowired
 	private DistrictService districtService;
 
 	@Autowired
@@ -71,22 +67,16 @@ public class StatusController {
 	@Autowired
 	private DeviceMapper deviceMapper;
 
-
-	@PostMapping(value = "/status")
-	public ResponseEntity<StatusDto> createStatus(@RequestBody StatusDto statusDto) {
-		StatusDto createdStatus = statusService.createStatus(statusDto);
-		return new ResponseEntity<>(createdStatus, HttpStatus.CREATED);
-	}
 	
 	@PostMapping(value = "/status", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<String> createStatus(@RequestHeader String nameCity, @RequestHeader String password, @RequestBody String bodyString) {
+	public ResponseEntity<String> createStatus(@RequestHeader String name, @RequestHeader String password, @RequestBody String bodyString) {
 
 		ResponseEntity<String> response = null;
 		boolean keepGoing = true;
 		String procedureName = "Status creation - ";
 		
 		try {
-			CityDto login = cityService.login(nameCity, password);
+			CityDto login = cityService.login(name, password);
 			City city = null;
 			JSONObject body = new JSONObject(bodyString);
 			
@@ -108,10 +98,10 @@ public class StatusController {
 			// Check Device
 			Device device = null;
 			if(keepGoing) {
-				String stageName = procedureName + "Device check";
+				String stageName = procedureName + "Device check ";
 				if(body.has("device") && body.getJSONObject("device")!=null && body.getJSONObject("device").has("id")) {
 					Optional<Device> deviceOptional = deviceRepository.findByIdAndCity(body.getJSONObject("device").getInt("id"), city);
-					if(deviceOptional!=null && deviceOptional.get()!=null) {
+					if(deviceOptional!=null && deviceOptional.isPresent() && deviceOptional.get()!=null) {
 						device = deviceOptional.get();
 					} else {
 						keepGoing = false;
@@ -119,25 +109,7 @@ public class StatusController {
 					}
 				} else {
 					keepGoing = false;
-					response = new ResponseEntity<>(stageName + "failed - Device check: Device mandatory", HttpStatus.NOT_ACCEPTABLE);
-				}
-			}
-			
-			// Check District
-			District district = null;
-			if(keepGoing) {
-				String stageName = procedureName + "District check ";
-				if(body.has("district") && body.getJSONObject("district")!=null && body.getJSONObject("district").has("id")) {
-					Optional<District> districtOptional = districtRepository.findByIdAndCity(body.getJSONObject("district").getInt("id"), city);
-					if(districtOptional!=null && districtOptional.get()!=null) {
-						district = districtOptional.get();
-					} else {
-						keepGoing = false;
-						response = new ResponseEntity<>(stageName + "failed: District not found", HttpStatus.NOT_ACCEPTABLE);
-					}
-				} else {
-					keepGoing = false;
-					response = new ResponseEntity<>(stageName + "failed: District mandatory", HttpStatus.NOT_ACCEPTABLE);
+					response = new ResponseEntity<>(stageName + "failed: Device mandatory", HttpStatus.NOT_ACCEPTABLE);
 				}
 			}
 			
@@ -154,17 +126,14 @@ public class StatusController {
 						keepGoing = false;
 						response = new ResponseEntity<>(stageName + "failed: timestamp not valid", HttpStatus.NOT_ACCEPTABLE);
 					}
-				}/* else {
-					keepGoing = false;
-					response = new ResponseEntity<>(new JSONObject(stageName + "timestamp mandatory").toString(), HttpStatus.FORBIDDEN);
-				}*/
+				}
 			}
 			
 			// Check Co2Level
 			Integer co2Level = null;
 			if(keepGoing) {
 				String stageName = procedureName + "Check Co2Level ";
-				if(body.has("co2Level") && body.getString("co2Level")!=null) {
+				if(body.has("co2Level")) {
 					co2Level = body.getInt("co2Level");
 				} else {
 					keepGoing = false;
@@ -174,9 +143,9 @@ public class StatusController {
 			
 			// Creating Status
 			if(keepGoing) {
-				StatusDto statusDto = new StatusDto(null, city, device, district, timestamp, co2Level);
+				StatusDto statusDto = new StatusDto(null, city, device, device.getDistrict(), timestamp, co2Level);
 				StatusDto createdStatus = statusService.createStatus(statusDto);
-				response = new ResponseEntity<>(createdStatus.toString(), HttpStatus.OK);
+				response = new ResponseEntity<>(statusMapper.mapToJSON(createdStatus).toString(), HttpStatus.OK);
 			}
 			
 			
@@ -186,26 +155,10 @@ public class StatusController {
 	    }
         
         return response;
-	}	
-	
-	/*
-	@GetMapping(value = "/status/{id}")
-    public ResponseEntity<StatusDto> getStatusById(@PathVariable Integer id) {
-        try {
-            StatusDto status = statusService.getElementById(id);
-            if(status!=null) {
-            	return new ResponseEntity<>(status, HttpStatus.OK);            	
-            } else {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    */
+	}
 	
 	@PostMapping(value = "/statusesList", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> getCityById(@RequestHeader String name, @RequestHeader String password, @RequestBody String bodyString) {
+    public ResponseEntity<String> getStatusesList(@RequestHeader String name, @RequestHeader String password, @RequestBody String bodyString) {
 
 		ResponseEntity<String> response = null;
 		
@@ -231,7 +184,9 @@ public class StatusController {
 					if(body!=null) {
 						if(body.has("district")) {
 							DistrictDto districtDto = districtService.getElementById(body.getJSONObject("district").getInt("id"));
-							district = districtMapper.mapToDistrict(districtDto);
+							if(districtDto!=null) {
+								district = districtMapper.mapToDistrict(districtDto);
+							}
 						}
 						if(body.has("device")) {
 							DeviceDto deviceDto = deviceService.getElementById(body.getJSONObject("device").getInt("id"));
@@ -255,7 +210,7 @@ public class StatusController {
 					List<Status> statuses = statusRepository.findStatusCustom(city, district, device, dateFrom, dateTo, co2Min, co2Max);
 	
 			        if(statuses!=null && statuses.size()>0) {
-			        	JSONObject statusesJSON = statusMapper.mapToStatusesJSON(city, statuses);
+			        	JSONObject statusesJSON = statusMapper.mapToJSONList(statuses);
 			        	response = new ResponseEntity<>(statusesJSON.toString(), HttpStatus.OK);
 			        } else {
 			        	response = new ResponseEntity<>("No statuses found", HttpStatus.NOT_FOUND);
@@ -268,7 +223,7 @@ public class StatusController {
 			}
 			
         } catch (Exception e) {
-            response = new ResponseEntity<>("Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
+            response = new ResponseEntity<>("Internal server error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
             e.printStackTrace();
         }
         

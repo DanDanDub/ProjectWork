@@ -16,14 +16,17 @@ import org.springframework.web.bind.annotation.RestController;
 import it.danilo.projectwork.Utils;
 import it.danilo.projectwork.dto.CityDto;
 import it.danilo.projectwork.dto.DeviceDto;
+import it.danilo.projectwork.dto.DistrictDto;
 import it.danilo.projectwork.entity.City;
 import it.danilo.projectwork.entity.Device;
 import it.danilo.projectwork.entity.District;
 import it.danilo.projectwork.mapper.CityMapper;
 import it.danilo.projectwork.mapper.DeviceMapper;
+import it.danilo.projectwork.mapper.DistrictMapper;
 import it.danilo.projectwork.repository.DeviceRepository;
 import it.danilo.projectwork.service.CityService;
 import it.danilo.projectwork.service.DeviceService;
+import it.danilo.projectwork.service.DistrictService;
 
 @RestController
 public class DeviceController {	
@@ -42,6 +45,12 @@ public class DeviceController {
 
 	@Autowired
 	private CityMapper cityMapper;
+
+	@Autowired
+	private DistrictService districtService;
+
+	@Autowired
+	private DistrictMapper districtMapper;
 
 	@PostMapping(value = "/device", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<String> createDevice(@RequestHeader String name, @RequestHeader String password, @RequestBody String bodyString) {
@@ -79,6 +88,7 @@ public class DeviceController {
 					district = (District) checkFields.get("district");
 					nameField = checkFields.getString("name");
 				} else {
+					keepGoing = false;
 					response = new ResponseEntity<>(checkFields.get(Utils.CHECK_ERROR_MESSAGE).toString(), HttpStatus.NOT_ACCEPTABLE);
 				}
 			}
@@ -87,20 +97,20 @@ public class DeviceController {
 			if(keepGoing) {
 				DeviceDto deviceDto = new DeviceDto(null, city, district, nameField);
 				DeviceDto createdDevice = deviceService.createDevice(deviceDto);
-				response = new ResponseEntity<>(deviceMapper.mapToDeviceJSON(city, deviceMapper.mapToDevice(createdDevice)).toString(), HttpStatus.OK);
+				response = new ResponseEntity<>(deviceMapper.mapToJSON(createdDevice).toString(), HttpStatus.OK);
 			}
 			
 			
 	    } catch (Exception e) {
-	        response = new ResponseEntity<>("Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
+	        response = new ResponseEntity<>("Internal server error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 	        e.printStackTrace();
 	    }
         
         return response;
 	}	
 	
-	@GetMapping(value = "/device", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> getDeviceById(@RequestHeader String name, @RequestHeader String password) {
+	@GetMapping(value = "/devicesList", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> getDeviceById(@RequestHeader String name, @RequestHeader String password, @RequestBody String bodyString) {
         
 		ResponseEntity<String> response = null;
 		boolean keepGoing = true;
@@ -120,13 +130,33 @@ public class DeviceController {
 				keepGoing = false;
 				response = new ResponseEntity<>("Login failed", HttpStatus.FORBIDDEN);
 			}
+
+			// Lettura body
+			District district = null;
+			if(keepGoing) {
+	        	JSONObject body = new JSONObject(bodyString);
+				
+				if(body!=null) {
+					if(body.has("district")) {
+						DistrictDto districtDto = districtService.getElementById(body.getJSONObject("district").getInt("id"));
+						district = districtMapper.mapToDistrict(districtDto);
+					}
+				}
+			}
 			
 			// Find Devices
 			if(keepGoing) {
-				List<Device> devices = deviceRepository.findByCity(city);
+				
+				List<Device> devices = null;
+				
+				if(district!=null) {
+					devices = deviceRepository.findByCityAndDistrict(city, district);					
+				} else {
+					devices = deviceRepository.findByCity(city);
+				}
 				
 		        if(devices!=null && devices.size()>0) {
-		        	JSONObject devicesJSON = deviceMapper.mapToDeviceesJSON(city, devices);
+		        	JSONObject devicesJSON = deviceMapper.mapToJSONList(devices);
 		        	response = new ResponseEntity<>(devicesJSON.toString(), HttpStatus.OK);
 		        } else {
 		        	response = new ResponseEntity<>("No devices found", HttpStatus.NOT_FOUND);
@@ -141,4 +171,5 @@ public class DeviceController {
         
         return response;
     }
+
 }
